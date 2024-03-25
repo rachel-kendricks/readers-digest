@@ -8,7 +8,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ["id", "book", "user", "rating", "comment", "date_posted", "is_owner"]
+        fields = ["id", "book", "user", "rating", "comment", "date", "is_owner"]
         read_only_fields = ["user"]
 
     def get_is_owner(self, obj):
@@ -31,9 +31,17 @@ class ReviewViewSet(viewsets.ViewSet):
 
     def create(self, request):
         # Create a new instance of a review and assign property
+        review = Review()
+
         # values from the request payload using `request.data`
+        review.rating = request.data["rating"]
+        review.comment = request.data["comment"]
+        review.date = request.data["date"]
+        review.user = request.auth.user
+        review.book = request.data["book"]
 
         # Save the review
+        review.save()
 
         try:
             return "hello"
@@ -46,12 +54,14 @@ class ReviewViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):
         try:
-            return "hello"
             # Get the requested review
+            review = Review.objects.get(pk=pk)
 
             # Serialize the object (make sure to pass the request as context)
+            serializer = ReviewSerializer(review, context={"request": request})
 
             # Return the review with 200 status code
+            return Response(serializer.data)
 
         except Review.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
